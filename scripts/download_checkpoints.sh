@@ -37,7 +37,7 @@ download_hf() {
     local repo_id="$1"
     local local_dir="$2"
     echo "Downloading $repo_id from HuggingFace..."
-    huggingface-cli download "$repo_id" --local-dir "$local_dir"
+    hf download "$repo_id" --local-dir "$local_dir"
     echo "Saved to $local_dir"
 }
 
