@@ -12,9 +12,11 @@ See README.md ("Run Inference") for usage, or run with --help.
 import os
 import json
 import argparse
+import torch
 from unsloth import FastLanguageModel
 from transformers import TextStreamer
-
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
 
 def load_model(ckpt_path, max_seq_length=16384, dtype=None, load_in_4bit=False):
     model, tokenizer = FastLanguageModel.from_pretrained(
@@ -26,7 +28,21 @@ def load_model(ckpt_path, max_seq_length=16384, dtype=None, load_in_4bit=False):
     FastLanguageModel.for_inference(model)
     print(f"Model {id(model)} is set for inference.")
     return model, tokenizer
+# def load_model(ckpt_path, max_seq_length=16384, dtype=None, load_in_4bit=False):
+#     tokenizer = AutoTokenizer.from_pretrained(ckpt_path)
 
+#     base = AutoModelForCausalLM.from_pretrained(
+#         "meta-llama/Llama-3.2-3B-Instruct",
+#         #"unsloth/Qwen2.5-3B",
+#         torch_dtype=torch.bfloat16,
+#         device_map="auto",
+#         attn_implementation="sdpa",
+#     )
+
+#     model = PeftModel.from_pretrained(base, ckpt_path)
+#     model.eval()
+
+#     return model, tokenizer
 
 def retrieve_step_text(caption, db_csv_path, step_json_dir, top_k=5):
     # Imported lazily so that no-RAG generation does not require the retrieval stack.
@@ -159,6 +175,31 @@ def generate_step_file(
 
     # Tokenize and generate
     inputs = tokenizer([formatted_prompt], return_tensors="pt").to("cuda")
+    input_len = inputs["input_ids"].shape[1]
+
+    print("Input tokens:", input_len)
+    # streamer = TextStreamer(
+    #     tokenizer,
+    #     skip_prompt=True,
+    #     skip_special_tokens=True,
+    # )
+    # with torch.no_grad():
+    #     generated = model.generate(
+    #         **inputs,
+    #         streamer=streamer,
+    #         max_new_tokens=max_new_tokens,
+    #         do_sample=False,
+    #         eos_token_id=tokenizer.eos_token_id,
+    #         pad_token_id=tokenizer.eos_token_id,
+    #     )
+
+    # new_tokens = generated[0, input_len:]
+
+    # step_data = tokenizer.decode(
+    #     new_tokens,
+    #     skip_special_tokens=True,
+    # ).strip()
+
     streamer = TextStreamer(tokenizer)
     print(f"Generating STEP file with model object id: {id(model)}...")
     generated = model.generate(**inputs, streamer=streamer, max_new_tokens=max_new_tokens)
@@ -174,7 +215,11 @@ def generate_step_file(
     end = step_data.find(terminator)
     if end != -1:
         step_data = step_data[: end + len(terminator)]
-
+    else:
+        print(
+            "WARNING: generation stopped before END-ISO-10303-21;. "
+            "Try increasing --max_new_tokens."
+        )
     # Prepend standard STEP header
     full_step_file = STEP_HEADER + "\n" + step_data
 

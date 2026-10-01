@@ -1,5 +1,5 @@
 Error while loading conda entry point: conda-libmamba-solver (module 'libmambapy' has no attribute 'QueryFormat')
-WARNING conda.plugins.manager:load_entrypoints(132): Error while loading conda entry point: conda-libmamba-solver (module 'libmambapy' has no attribute 'QueryFormat')
+WARNING conda.plugins.manager:load_entrypoints(132): Error while loading conda entry point conda-libmamba-solver (module 'libmambapy' has no attribute 'QueryFormat')
 name: step_llm
 channels:
   - conda-forge

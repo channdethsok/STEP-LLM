@@ -12,8 +12,12 @@ CSV_FILE = "./dataset/cad_captions_0-500.csv"
 # UPDATE STEP_FILE_DIRS to point to your DFS-restructured STEP file directories.
 # Each listed directory must contain per-model subdirectories (<model_id>/x.step).
 # After running batch_restructure.sh on a raw ABC chunk, that is simply:
+# STEP_FILE_DIRS = [
+#     "./dataset/dfs_step",
+# ]
 STEP_FILE_DIRS = [
-    "./dataset/dfs_step",
+    f"./dataset/dfs_step/abc_{i:04d}_step_v00"
+    for i in range(1, 9)
 ]
 # If your dfs_step is organised into numbered chunk buckets (the layout used
 # for the DATE paper), list the buckets instead:
@@ -38,6 +42,7 @@ def load_data(csv_file):
 
 # Step 2: Load STEP file DATA section
 def load_step_data(model_id):
+    model_id = str(model_id).zfill(8)
     for step_dir in STEP_FILE_DIRS:
         step_folder_path = os.path.join(step_dir, model_id)
         if not os.path.exists(step_folder_path):
